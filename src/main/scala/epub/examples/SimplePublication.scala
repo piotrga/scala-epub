@@ -4,7 +4,7 @@ import epub._
 import epub.css.Css._
 import epub.dcmi._
 import epub.dcmi.Metadata._
-import epub.PackagePart._
+import epub.Packaging._
 
 object SimplePublication {
   def main(args: Array[String]) = {

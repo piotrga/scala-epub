@@ -3,7 +3,7 @@ package epub
 import epub.dcmi._
 import epub.dcmi.Metadata._
 import epub.css.Css._
-import epub.PackagePart._
+import epub.Packaging._
 import org.specs2.mutable._
 
 class PublicationSpec extends Specification {

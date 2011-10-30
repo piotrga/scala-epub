@@ -1,7 +1,7 @@
 package epub
 
-import epub.dcmi.Metadata
-import epub.dcmi.Metadata._
+import dcmi.Metadata._
+import Packaging._
 
 import java.io.{OutputStream, FileOutputStream}
 import java.util.zip.{ZipOutputStream, ZipEntry}
@@ -15,14 +15,20 @@ object Serializer {
   private [epub] val contentDescriptorPath = "content.opf"
   val reservedPaths = Set(containerDescriptorPath, tocPath, contentDescriptorPath)
 
-  def serialize(ePub: Publication, fileName: String): Unit =
+  def serialize(ePub: Publication, fileName: String) {
     serialize(ePub, new FileOutputStream(fileName))
+  }
 
-  def serialize(ePub: Publication,  out: OutputStream): Unit = {
+  def serialize(ePub: Publication,  out: OutputStream) {
     val zos = new ZipOutputStream(out)
     writeText("mimetype", Mimetypes.EPUB, zos)
     ePub.content.foreach( writePart(_, zos) )
     zos.close()
+  }
+
+  private def writePart(part: PackagePart, out: ZipOutputStream) {
+    out.putNextEntry(new ZipEntry(part.path))
+    part.write(out)
   }
 /*
   private def xmlMetadata(ePub: Publication) = {
@@ -33,12 +39,8 @@ object Serializer {
   }
 */
   private def writeText(path: String, text: String,  out: ZipOutputStream) {
-    val entry = new ZipEntry(path);
-    out.putNextEntry(entry);
+    out.putNextEntry(new ZipEntry(path))
     out.write(text.getBytes)
   }
-
-  private def writePart(part: PackagePart, out: ZipOutputStream) =
-    writeText(part.path, part.content, out)
 }
 

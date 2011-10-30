@@ -1,21 +1,25 @@
 package epub
 
-import java.io.OutputStream
 import epub.css.Css._
+import java.io.{InputStream, IOException, FileInputStream, OutputStream}
 
 object Packaging {
   implicit val mimetypeResolver = ExtensionMimetypeResolver
 
+  implicit def strToResolver(mimetype: String) = new MimetypeResolver {
+    def resolve(part: PackagePart): String = mimetype
+  }
+
   def text(path: String, content: String)(implicit resolver: MimetypeResolver) = {
-    new TextPart(path, content, resolver.resolve(path, content))
+    withMimetypeResolution(new TextPart(path, content, ""))
   }
 
   def file(path: String, fileName: String)(implicit resolver: MimetypeResolver) = {
-    new FilePart(path, fileName, "")
+    withMimetypeResolution(new FilePart(path, fileName, ""))
   }
 
-  def URI(path: String, uri: java.net.URI)(implicit resolver: MimetypeResolver) = {
-    new URIPart(path, uri, "")
+  def URI(path: String, url: java.net.URL)(implicit resolver: MimetypeResolver) = {
+    withMimetypeResolution(new URIPart(path, url, ""))
   }
 
   def html(path: String, xmlNode: xml.Node) = {
@@ -26,30 +30,50 @@ object Packaging {
     new TextPart(path, cssSeq.mkString, Mimetypes.CSS)
   }
 
-  abstract class PackagePart (val path: String, var mimetype: String) {
-    def write(out: OutputStream)
+  abstract class PackagePart {
+    val path: String
+    private [epub] var mimetype: String
+    def write(to: OutputStream)
   }
-  case class FilePart(val path: String,
-                      val fileName: String,
-                      var mimetype: String) extends PackagePart(path, mimetype) {
-    def write(out: OutputStream) {
-      println("path")
+
+  case class FilePart(override val path: String,
+                      fileName: String,
+                      override var mimetype: String) extends PackagePart {
+    def write(to: OutputStream) {
+      copyFromStream(new FileInputStream(fileName), to)
     }
   }
 
-  case class URIPart(val path: String,
-                     val uri: java.net.URI,
-                     var mimetype: String) extends PackagePart(path, mimetype) {
-    def write(out: OutputStream) {
-      println("uri")
+  case class URIPart(override val path: String,
+                     url: java.net.URL,
+                     override var mimetype: String) extends PackagePart {
+    def write(to: OutputStream) {
+      copyFromStream(url.openStream(), to)
     }
   }
 
-  case class TextPart(val path: String,
+  case class TextPart(override val path: String,
                       val text: String,
-                      var mimetype: String) extends PackagePart(path, mimetype) {
-    def write(out: OutputStream) {
-      out.write(text.getBytes)
+                      override var mimetype: String) extends PackagePart {
+    def write(to: OutputStream) {
+      to.write(text.getBytes)
+    }
+  }
+
+  private def withMimetypeResolution(part: PackagePart)(implicit resolver: MimetypeResolver) = {
+    part.mimetype = resolver.resolve(part)
+    part
+  }
+
+  private def copyFromStream(from: InputStream, to: OutputStream) {
+    try {
+      val bufSize = 4096
+      val buffer = new Array[Byte](bufSize)
+      Iterator.continually(from.read(buffer))
+        .takeWhile(_ != -1)
+        .foreach { to.write(buffer, 0 , _) }
+    } finally {
+      from.close()
     }
   }
 }

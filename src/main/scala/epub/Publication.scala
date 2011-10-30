@@ -1,16 +1,17 @@
 package epub
 
-import epub.dcmi.Metadata
+import dcmi.Metadata._
+import Packaging._
 
 class Publication (
-  private[epub] var metadata: Map[String, Metadata],
+  private[epub] var metadata: Metadata,
   private[epub] var content: List[PackagePart]) {
 
-  def += (part: PackagePart) = {
+  def += (part: PackagePart) {
     content = part :: content
   }
 
-  def ++= (parts: List[PackagePart]) = {
+  def ++= (parts: List[PackagePart]) {
     content = parts ::: content
   }
 
@@ -18,6 +19,6 @@ class Publication (
 }
 
 object Publication {
-  def apply(meta: Map[String, Metadata], content: PackagePart*) =
+  def apply(meta: Metadata, content: PackagePart*) =
     new Publication(meta, content.toList)
 }

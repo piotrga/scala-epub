@@ -1,9 +1,10 @@
 package epub.dcmi
 
-abstract class Metadata
-
 object Metadata {
-  def apply(items: Metadata*) = items.map( it => (it.getClass.getSimpleName, it) ).toMap
+  def apply(items: MetadataEntry*) = {
+    val itemsMap = items.map( it => (it.getClass.getSimpleName, it) ).toMap
+    new Metadata(itemsMap)
+  }
 
   def id(id: String) = Identifier(id)
   def title(title: String) = Title(title)
@@ -13,31 +14,50 @@ object Metadata {
   def publisher(publisher: String) = Publisher(publisher)
   def rights(license: String) = Rights(license)
 
-  case class Identifier(id: String) extends Metadata {
-    def toXML = <dc:identifier id="bookid">{id}</dc:identifier>
+  class Metadata (items: Map[String,  MetadataEntry]) extends PartialFunction[String, MetadataEntry] {
+    def toXML = {
+      <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"
+                xmlns:dcterms="http://purl.org/dc/terms/"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xmlns:opf="http://www.idpf.org/2007/opf">
+        {for ((name, item) <- items) yield item.toXML}
+      </metadata>
+    }
+
+    def apply(key: String) = items(key)
+    def isDefinedAt(x: String) = items.isDefinedAt(x)
   }
 
-  case class Title(title: String) extends Metadata {
-    def toXML = <dc:title>{title}</dc:title>
+  abstract class MetadataEntry { def toXML: xml.Node }
+
+  case class Identifier(id: String) extends MetadataEntry {
+    override def toXML = <dc:identifier id="bookid">{id}</dc:identifier>
   }
 
-  case class Creator(creator: String) extends Metadata {
-    def toXML = <dc:creator>{creator}</dc:creator>
+  case class Title(title: String) extends MetadataEntry {
+    override def toXML = <dc:title>{title}</dc:title>
   }
 
-  case class Language(lang: String) extends Metadata {
-    def toXML = <dc:language>{lang}</dc:language>
+  case class Creator(creator: String) extends MetadataEntry {
+    override def toXML = <dc:creator>{creator}</dc:creator>
   }
 
-  case class Date(date: java.util.Date) extends Metadata {
-    def toXML = <dc:date>{java.text.DateFormat.getInstance().format(date)}</dc:date>
+  case class Language(lang: String) extends MetadataEntry {
+    override def toXML = <dc:language>{lang}</dc:language>
   }
 
-  case class Publisher(publisher: String) extends Metadata {
-    def toXML = <dc:publisher>{publisher}</dc:publisher>
+  case class Date(date: java.util.Date) extends MetadataEntry {
+    override def toXML =
+      <dc:date xsi:type="dcterms:W3CDTF">
+        {java.text.DateFormat.getInstance().format(date)}
+      </dc:date>
   }
-  case class Rights(license: String) extends Metadata {
-    def toXML = <dc:rights>{license}</dc:rights>
+
+  case class Publisher(publisher: String) extends MetadataEntry {
+    override def toXML = <dc:publisher>{publisher}</dc:publisher>
+  }
+  case class Rights(license: String) extends MetadataEntry {
+    override def toXML = <dc:rights>{license}</dc:rights>
   }
 
 }
