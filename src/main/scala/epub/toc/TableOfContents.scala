@@ -1,4 +1,4 @@
-package epub
+package epub.toc
 
 class TOCEntry private [epub] (val label: String,
                val ref: String,

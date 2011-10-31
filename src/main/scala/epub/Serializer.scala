@@ -10,7 +10,7 @@ object Serializer {
 
   private val dcmiNamespace = "http://purl.org/dc/elements/1.1/"
 
-  private [epub] val containerDescriptorPath = "META-INF/conainer.xml"
+  private [epub] val containerDescriptorPath = "META-INF/container.xml"
   private [epub] val tocPath = "toc.ncx"
   private [epub] val contentDescriptorPath = "content.opf"
   val reservedPaths = Set(containerDescriptorPath, tocPath, contentDescriptorPath)
@@ -20,27 +20,40 @@ object Serializer {
   }
 
   def serialize(ePub: Publication,  out: OutputStream) {
-    val zos = new ZipOutputStream(out)
-    writeText("mimetype", Mimetypes.EPUB, zos)
-    ePub.content.foreach( writePart(_, zos) )
-    zos.close()
+    val to = new ZipOutputStream(out)
+    writeText("mimetype", Mimetypes.EPUB, to)
+    writeContainerInfo(to)
+    ePub.content.foreach( writePart(_, to) )
+    to.close()
   }
 
-  private def writePart(part: PackagePart, out: ZipOutputStream) {
-    out.putNextEntry(new ZipEntry(part.path))
-    part.write(out)
+  private def writePart(part: PackagePart, to: ZipOutputStream) {
+    to.putNextEntry(new ZipEntry(part.path))
+    part.write(to)
   }
-/*
-  private def xmlMetadata(ePub: Publication) = {
-    var metadata = ePub.metadata
-    if (! metadata.contains("identifier")) {
-      metadata += ("identifier", Identifier(java.util.UUID.randomUUID()))
-    }
+
+  private def writeContainerInfo(to: ZipOutputStream) {
+    to.putNextEntry(new ZipEntry(containerDescriptorPath))
+    to.write("""<?xml version="1.0"?>""".getBytes)
+    to.write(
+      <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+        <rootfiles>
+            <rootfile full-path={contentDescriptorPath}
+                      media-type="application/oebps-package+xml"/>
+        </rootfiles>
+      </container>.toString().getBytes
+    )
   }
-*/
-  private def writeText(path: String, text: String,  out: ZipOutputStream) {
-    out.putNextEntry(new ZipEntry(path))
-    out.write(text.getBytes)
+
+  private def makeManifest(parts: List[PackagePart]) = {
+    <manifest>
+      {parts.map(p => <item id={p.path} href={p.path} media-type={p.mimetype}/>)}
+    </manifest>
+  }
+
+  private def writeText(path: String, text: String,  to: ZipOutputStream) {
+    to.putNextEntry(new ZipEntry(path))
+    to.write(text.getBytes)
   }
 }
 
