@@ -14,7 +14,7 @@ object Metadata {
   def publisher(publisher: String) = Publisher(publisher)
   def rights(license: String) = Rights(license)
 
-  class Metadata (items: Map[String,  MetadataEntry]) extends PartialFunction[String, MetadataEntry] {
+  class Metadata (val items: Map[String,  MetadataEntry]) extends PartialFunction[String, MetadataEntry] {
     def toXML = {
       <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"
                 xmlns:dcterms="http://purl.org/dc/terms/"
