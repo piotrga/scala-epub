@@ -1,8 +1,8 @@
 name := "scala-epub"
 
-version := "0.1"
+version := "0.1.1"
 
-scalaVersion := "2.9.1"
+scalaVersion := "2.10.5"
 
 libraryDependencies ++= Seq(
     "org.specs2" %% "specs2" % "1.6.1",
