@@ -36,7 +36,7 @@ object SimplePublication {
             "text-indent" := "1em",
             "text-align" := "justify")) :: Nil
 
-      val toc = TableOfContents(entry("Main text", "OPS/main.html"))
+      val toc = new TableOfContents(entry("Main text", "OPS/main.html"))
     }
 
     Serializer.serialize(ePub, "simple.epub")
